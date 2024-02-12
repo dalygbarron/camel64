@@ -7,3 +7,4 @@ build/*
 main.z64
 .vscode
 .libdragon
+.DS_Store
