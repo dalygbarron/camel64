@@ -1,0 +1,36 @@
+Character collision objects are cylinders, detecting collisions between
+cylinders is extremely simple so I am not gonna bother describing it here.
+Probably not going to support rotations unless I end up needing to because it
+will make it slower.
+
+Now collisions between these cylinders and the polygons of the world is a bit
+more interesting. To detect collisions between a line that goes up the y axis
+and polygons should be easy. first we find if the polygon even contains the
+point at all on the x/z plane and if not we skip it, then if it does contain the
+point we figure out what the height would be at that point, and then we just
+have to find if that height is on the line.
+
+finding if a point is in a triangle in 2d can be done with the following
+algorithm: https://stackoverflow.com/questions/2049582/how-to-determine-if-a-point-is-in-a-2d-triangle
+When we modify the positions be closer we can do it exclusively in calling this
+function. So, if we use barycentric coordinates we will be able to both find if
+the point is within the triangle and find the point's height in one fell swoop.
+Also, we will move the vertices of the triangle to be cylinder radius units
+closer to the colliding things position in each axis individually.
+
+Now, barycentric coordinates do require a fair few calculations and maaayyybe
+even some division, so we are probably going to want to cull out as many
+irrelevant polygons as possible before this point.
+
+Generally no transformation matrices needed, but if we have child objects or
+moving objects that are collidable then we will have to do some kind of
+transformation handling. Probably best if we do apply transformation matrices
+actually come to think of it. However, keep in mind that if we avoid centering
+the world around the character in question using their inverse matrix, we can
+transform all of the things we need to transform and check collisions for all
+characters at the same time without repeating the transformations.
+
+Keep in imnd that we do also need to transform the characters based on their
+own matrices into the global space, so it might be a good idea to cache their
+origin and also multiply the height by their y scale and maybe the radius by
+the x axis or z axis or something.

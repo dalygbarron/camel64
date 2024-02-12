@@ -1,0 +1,28 @@
+Like with most games there are two kinds of UI basically. There is non blocking
+UI that just shows info and you don't interact with it at all, and there
+is UI that blocks the rest of the game from going on so you can interact with it
+like menus and text boxes etc. I guess some games have a UI you interact with
+without it blocking the gameplay but that is not relevant to this game.
+
+Types of non blocking UI in the game would mostly be a health bar, description
+of the items you have got set to buttons, canopic jar count. That's about it tbh
+and it will be displayed in a fairly simple manner.
+
+As for blocking ui, we will have text boxes for in game dialogue, we will have
+an in game menu with various screens, we will have a main menu which will also
+have various screens and things.
+
+The non blocking UI is so easy to implement it will barely even need any unique
+code, so from here I am just going to be talking about the blocking UI.
+
+We do want other stuff to be able to run at the same time, so just implementing
+as a function call with it's own update loop etc is not acceptible sadly.
+Rather than implementing a scene stack type of system, rather there will be a
+two tiered system where we have got the main game stuff that displays levels
+etc, which is always present, and then on top of that we can have a menu object
+be present, and when that is present the level does not update normally, but
+some basic shit like animations can keep running.
+
+Because there is only one level thing active and one menu thing possibly active,
+we might as well implement these as globals, so the menu can for example update
+the camera or something.

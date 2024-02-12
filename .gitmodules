@@ -1,0 +1,7 @@
+[submodule "libdragon"]
+	path = libdragon
+	url = https://github.com/DragonMinded/libdragon
+	branch = trunk
+[submodule "src/coru"]
+	path = src/coru
+	url = git@github.com:geky/coru.git

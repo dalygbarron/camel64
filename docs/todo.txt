@@ -1,0 +1,34 @@
+Figure out wtf this game is actually going to be.
+
+implement loading in static models from blender and also those sausage 64 files.
+    From what I can gather the sausage 64 format is supposed to be replaced with
+    your own format by hacking the export script, which makes me think, I could
+    export all models in a similar format and the only difference between the
+    animated ones and the normal ones can be whether they contain animation
+    data. Optimising cache usage would be good but from what I can gather it
+    is probably not going to be possible all that often if we have to split
+    stuff up for getting the right texture bits all the time anyway. Also need
+    to figure out how to split so textures appear correctly when opengl only has
+    per vertex attributes. In the end I think we might need to do a home made
+    approach where essentially we iterate over faces and build up a list of
+    vertices where the same vertex can appear twice if it has different uv
+    mapping or colour data (not sure about normal data. Seems like normals don't
+    affect face culling in opengl so unless I am using real time lighting I
+    beleive normal data has no use). 
+
+Implement collision detection. Already wrote down nice algorithm somewhere.
+
+Implement lighting. There is a lot of data involved so I think we probably want
+    to create some kind of subclass of spatial or something like that which has
+    got all the data in one place etc etc. We probably also want to have some
+    kind of system so that lights that are a certain distance away give back
+    their opengl light slot so a closer light can use it etc. We can just
+    maintain a list of light slots that are not in use, and when a light goes
+    out of range it puts it's slot on the stack and ones coming into range look
+    for slots before they actually start functioning. Obviously when the level
+    is changed the whole stack should be reset, but if these light objects have
+    a destructor that returns their light slot or whatever that should be more
+    or less automatic. Maybe I will make this lighting stuff an optional
+    feature of all spatials actually. Could be useful to have a glowing enemy
+    or whatever the fuck.
+

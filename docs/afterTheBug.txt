@@ -1,0 +1,13 @@
+Oh man doing that coroutine stuff took so long I can barely remember what I was
+actually doing before that.
+
+I think I need to finish this sprite batcher system. We have got the atlases,
+we just need to be able to use them all and load in the data. Not that much
+work once I figure out a format etc.
+
+Once we have atlases working it would be a good time to actually work on some
+of the bullet hell stuff. We should be able to design it so that the character
+graphics can translate easily from 2D sprites to 3D models when the time comes.
+
+I'll just make a nice boss battle or something then we can worry about other
+concerns.

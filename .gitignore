@@ -1,0 +1,9 @@
+*.swp
+*.swn
+filesystem
+filesystem/*
+build
+build/*
+main.z64
+.vscode
+.libdragon

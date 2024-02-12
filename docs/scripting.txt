@@ -1,0 +1,188 @@
+implement yields in inline assembly. is it possible?
+
+
+
+
+
+Yeah I know, I just love finding huge jobs for myself don't I?
+
+That said, scripting is an indispensible tool, and if I am gonna make a game on
+the N64 then I want something of that ilk.
+
+Now, that said, trying to embed some shitty interpreted language that is slow at
+the best of times on the N64 is a recipe for wasted time, so I have come up with
+a better solution.
+
+I am going to write a Forth compiler which creates binary blobs that we can
+insert directly into our application, then we will implement a small library
+on the n64 side for using it which will do the following things:
+    create new instances of a script. They have their own stack but point to the
+    same code. The size of the stack probably needs to be known at compile time
+    and remain the same on the n64 side.
+
+    Manipulate a script instance's stack. Mostly, we need to be able to add
+    something to the top of the stack, or maybe pop something off it.
+
+    Jump into execution of a script instance, then the script runs until the
+    yield keyword is called (which in compiled machine code basically just makes
+    it).
+
+    Check if the instance has terminated.
+
+    Actually, this is just a thought, but could we make this into a sort of
+    runtime that is part of the binary itself? The only issue I can think of is
+    that we need to be able to allocate memory for the stack. Actually maybe you
+    could just pass it a reference to a region of allocated memory that is big
+    enough then this code doesn't need to worry about it.
+
+    Yeah so in this case I think it is best if it compiles to assembly so we
+    can figure out how to expose these functions, and I could make it optionally
+    compile with some wrapper code that performs the default functionality of
+    just creating one instance and executing it until it terminates, and then
+    returning the top of the stack or 0 if the stack is empty.
+
+NOTE TO BONNIE: I have changed my mind and I am not going to be targeting valid
+forth code. The standard language is fraught with bizarre edge cases and shit,
+which seems to be a bad combination of backwards compatability, years of no
+standardisation, everything is designed to be run interactively, etc etc etc.
+My version will have basic data types like strings and floats etc and they will
+work properly. Strings should be able to be defined like they are in any normal
+language.
+
+Ok figured out how we will deal with strings etc. When you define a string
+constant, this is saved in read only memory and you are placing a pointer to it
+on the stack, if you place the same string in multiple places it will detect it
+and use the same pointer. Anyway, constant pointer data can be placed
+anonymously onto the stack, however, mutable data such as a string buffer or an
+array or something must be placed in the heap using a variable name. Because of
+the way scoping works in forth, this means that these variables are basically
+accessible anywhere in the program, and thus do not need to be garbage collected
+because they never stop existing. Therefore, we do not need any kind of garbage
+collector. Sounds lazy but you have to remember this is also a major speed
+win. The downside here of course is that the programmer needs to be somewhat
+careful about how they utilise memory, and functions for example will probably
+want to share the same string buffer rather than create 20 different buffers
+that all use their same memory as this would easily use up the modest memory I
+wanted this to use.
+
+
+
+
+
+Ok, this is a big job. So where do we start? I want to be able to check that it
+actually works as quickly into the process as possible.
+ - step 0: I can test my idea about the runtime and calling into code without
+   actually compiling anything. I should write some minimal mips asm that lets
+   you call into yielding code and create instances. The code can just do
+   something simple like yield a number that increments. Should be able to
+   create multiple instances. 
+ - step 1: parse forth code into an AST or whatever and report errors on
+   undefined words and fucked up syntax etc.
+ - step 2: convert AST to x86 assembly so I can test it on my PC.
+ - step 3: convert AST to mips risc assembly, get it into the n64 and test
+   calling into it etc.
+
+In order to manage nested loops I think we will have to use a secondary stack
+that exists inside the heap, yeah this stack is called the return stack
+apparently, and you can put return locations and loop indices in there.
+
+At least we will always know if a given function call is inside a loop, so if
+it is, we can set it to push the loop index into stack before the return
+address, and pop it off after the return address is popped.
+
+
+the memory will be 32kb:
+program counter: 4b
+return address: 4b
+status: 4b
+stack pointer: 4b
+stack: 4kb
+heap: 28kb - 16 bytes
+
+
+here is some silly code I wrote earlier:
+: fizzer ( n -- ) 1 do
+  i
+  3 mod 0 = dup if ." fizz" then
+  i
+  5 mod 0 = dup if ." buzz" then
+  or invert if i . then
+  cr
+  loop
+;
+
+25 fizz
+
+
+at it's most naive, the assembly for this would
+work like this:
+
+t0 = LS
+t1 = LE
+t2 = LI
+t3 = ST
+t4 = TMP
+t5 = S1
+t6 = S2
+
+
+fizzer:
+    push ST                ; 1
+    -
+    ST = 1
+    pop into LS            ; do
+    -
+    pop into LE
+    -
+    ST = underneath
+    LI = LS
+    push ST                 ; i
+    -
+    ST = LI
+    push ST                 ; 3
+    -
+    ST = 3
+    pop into S1             ; mod
+    -
+    ST = ST % S1
+    push ST                 ; 0
+    -
+    ST = 0
+    pop into S1             ; =
+    -
+    ST = ST == S1
+    push ST                 ; dup
+    -
+
+    _not_equal:
+
+
+
+    yeah that's pretty cool. I know there are some bits where we write to the
+    stack and then just pop the same thing back off the stack again, but we
+    can fix this with peephole optimisation so don't fret.
+
+    Before I forget, peephole optimisation is where you iterate over the code
+    as groups of 5 or so instructions (like a little peephole), and you have
+    a list of optimisations and if the content of the peephole at that time fits
+    one of them you just chuck it on there. So it's a pretty unintelligent way
+    of optimising code really, but that is the appeal haha.
+
+
+
+
+
+Ok, so lets say we are going to implement this compiler iteratively, lets lay
+out the steps:
+    - just return a value so we can test our infrastructure. (tests from this
+    stage won't be forward compatible).
+    - allow putting ints on the stack and compile in a C function to print them
+      in a way that we can test against the output.
+    - basic maths functions like + - etc
+    - allow putting floating point values on the stack, and have seperate maths
+      functions for them and functions to convert ints to floats and vice versa.
+    - conditionals
+    - loops
+    - user defined functions
+    - constant Strings and associated functions
+    - 

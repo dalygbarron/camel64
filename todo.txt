@@ -1,0 +1,16 @@
+In the middle of making the multi texture batcher. As you will see, it provides
+    a z axis value so that we can maintain painter's algorithm sorting while
+    also switching textures, just need to maintain a z number and increment it
+    or whatever.
+    The only thing I don't exactly love is that we need to iterate over the
+    sub batches to find the right texture. in practice it's only going to be
+    going over a couple of so it won't be much of a speed drain but it's silly.
+    Actually come to think of it, what we could do is we load the textures
+    through the batch object and they become permanent fixtures of it. Then that
+    means the sprites will also be associated with those batches, and so the
+    drawing functions could be called directly on the sprites which then update
+    the sub batches, then you just have to remember to call the main draw call
+    on the overall batch object.
+    Actually we can avoid the issue of alignment and make reading in the engine
+    easier by just making the batcher generate a number of textures which all
+    fit a size requirement of 64x64 or whatever.

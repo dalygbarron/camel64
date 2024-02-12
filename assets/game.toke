@@ -1,0 +1,4 @@
+Honestly right now this file just exists as a hack to fix a glitch in the
+12345678901234567890123456789012345678901234567890123456789012345
+makefile where it needs the first prerequisite to be in the root of the
+filesystem.

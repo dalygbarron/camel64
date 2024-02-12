@@ -1,0 +1,35 @@
+so a camera object is essentially just a 3d object with no substance. It just
+exists in 3d space and has a rotation and scale. of some description.
+
+I'll probably store the transformation in a normal form as well as in matrix
+form so that I can do stuff more easily and sometimes it's good to regenerate
+the matrix anyway because they can accumulate errors.
+
+Generally I think we will want to push the normal transformation matrix onto the
+matrix stack, but I think the exception is for the camera. In that case we
+probably want to push the inverse of the matrix.
+
+so the only thing is how do we deal with rotations? Do we even need to store
+them? If we want to set a rotation we can just recalculate the matrix, and if we
+want to rotate it by a certain amount we can just multiply it by another matrix.
+
+Yeah fuck it we need not store rotations. can probably store scale though and
+storing position is necessary.
+
+nah thats retarded need to regenerate whole matrix after any change translatin 
+and rotation won't go togeyther.
+
+http://web.mit.edu/2.05/www/Handout/HO2.PDF
+
+
+
+
+
+Ideas for a potential algorithm to convert a mesh that has got per face data:
+actually we don't even really need an algorithm, if you're thinking of the obj
+format, we just build temporary arrays of all the vertex data, then when we are
+iterating over the face data we create new usable vertices for every combination
+of datas, so like 1/1 will be a real vertex and seperate from 1/2 or whatever,
+but if 1/1 appears twice that can be reused. If we are using the obj format then
+we can run it through that optimiser program but I'm not sure if we will be
+using it. Not sure if it's going to make that much difference anyway tbh.
