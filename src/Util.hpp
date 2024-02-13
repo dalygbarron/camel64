@@ -251,5 +251,20 @@ namespace Util {
              *         that you had better save it.
              */
             char const *next();
+
+            /**
+             * Reads in the next token, which MUST exist, and parses it into an
+             * integer. No idea what happens if it's not actually an integer
+             * but probably something freaky.
+             * @return the integer it parsed.
+             */
+            int nextInt();
+
+            /**
+             * Tells you if there is more to be read.
+             * @return true iff the next time you call next it won't return
+             *         null.
+             */
+            bool hasMore();
     };
 };

@@ -62,8 +62,8 @@ void TokenReader::refresh() {
 
 TokenReader::TokenReader(char const *filename) {
     input = fopen(filename, "r");
-    assert(input);
-    refresh();
+    if (input) refresh();
+    else fprintf(stderr, "Couldn't open file %s\n", filename);
 }
 
 TokenReader::~TokenReader() {
@@ -71,24 +71,36 @@ TokenReader::~TokenReader() {
 }
 
 char const *TokenReader::next() {
-    if (input == NULL) return NULL;
+    if (!input) return NULL;
     outputCursor = outputBuffer;
     while (true) {
         char c = *(cursor++);
-        if (c == 0 || (whitespace(c) && outputCursor != outputBuffer)) {
+        bool white = whitespace(c);
+        if (cursor - inputBuffer == BUFFER_SIZE) refresh();
+        if (c == 0 || (white && outputCursor != outputBuffer)) {
+            bool empty = outputCursor == outputBuffer;
             *(outputCursor++) = 0;
             if (c == 0) {
                 fclose(input);
                 input = NULL;
             }
-            return outputBuffer;
-        } else {
+            return empty ? NULL : outputBuffer;
+        } else if (!white) {
             *(outputCursor++) = c;
         }
-        if (cursor - inputBuffer == BUFFER_SIZE) refresh();
-        if (outputCursor - outputBuffer == BUFFER_SIZE - 1) {
+        if (outputCursor - outputBuffer == BUFFER_SIZE - 2) {
             outputBuffer[BUFFER_SIZE - 1] = 0;
             return outputBuffer;
         }
     }
+}
+
+int TokenReader::nextInt() {
+    char const *token = next();
+    assert(token);
+    return atoi(token);
+}
+
+bool TokenReader::hasMore() {
+    return input;
 }

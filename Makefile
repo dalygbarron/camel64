@@ -16,7 +16,7 @@ assets_i_png = $(addprefix pics/,$(notdir $(wildcard assets/pics/*.i.png)))
 assets_png = $(filter-out $(assets_i_png),$(addprefix pics/,$(notdir $(wildcard assets/pics/*.png))))
 assets_xm = $(addprefix music/,$(notdir $(wildcard assets/music/*.xm)))
 assets_model = $(addprefix models/,$(notdir $(wildcard assets/models/*.glb)))
-assets_conv = $(addprefix filesystem/,game.ini game.toke\
+assets_conv = $(addprefix filesystem/,sprites.toke\
                                      $(assets_png:.png=.sprite)\
 									 $(assets_font:%.ttf=%.font64)\
 									 $(assets_xm:%.xm=%.xm64)\
@@ -31,15 +31,10 @@ $(BUILD_DIR)/main.elf: $(OBJS)
 
 AUDIOCONV_FLAGS ?=
 
-filesystem/game.ini: assets/game.ini
+filesystem/sprites.toke: assets/sprites/*
 	@mkdir -p $(dir $@)
-	@echo "    [GAME] $@"
-	@cp $< $@
-
-filesystem/game.toke: assets/game.toke
-	@mkdir -p $(dir $@)
-	@echo "    [GAME] $@"
-	@cp $< $@
+	@echo "    [SPRITE_ATLAS] $@"
+	./tools/packer.py assets/sprites filesystem/sprites.toke filesystem/pics
 
 filesystem/music/%.xm64: assets/music/%.xm
 	@mkdir -p $(dir $@)

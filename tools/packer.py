@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+import os
+
 PAD = 1
 
 class Node:
@@ -26,11 +28,13 @@ class Node:
                 return False
         return self.right.add(image) or self.down.add(image)
 
-    def blit(self, canvas, offset):
+    def blit(self, file, canvas, offset):
         if not self.image: return
+        file.write("s %s %d %d %d %d " % (os.path.basename(self.image.filename), offset[0], offset[1], self.image.size[0], self.image.size[1]))
         canvas.paste(self.image, offset)
-        self.right.blit(canvas, (offset[0] + self.image.size[0] + PAD, offset[1]))
-        self.down.blit(canvas, (offset[0], offset[1] + self.image.size[1] + PAD))
+        self.right.blit(file, canvas, (offset[0] + self.image.size[0] + PAD, offset[1]))
+        self.down.blit(file, canvas, (offset[0], offset[1] + self.image.size[1] + PAD))
+
 
 from PIL import Image
 import sys, glob
@@ -64,9 +68,14 @@ for image in images:
         new_node.add(image)
         nodes.append(new_node)
 
-i = 1
-for node in nodes:
-    canvas = Image.new("RGBA", (64, 64))
-    node.blit(canvas, (0, 0))
-    canvas.save("%s/%d.png" % (outFolder, i))
-    i += 1
+with open(outFile, "w") as file:
+    file.write("%d\n", len(nodes))
+    i = 1
+    for node in nodes:
+        canvas_name = "pack_%d.png" % i
+        file.write("p %s " % canvas_name)
+        canvas = Image.new("RGBA", (64, 64))
+        node.blit(file, canvas, (0, 0))
+        canvas.save("%s/%s" % (outFolder, canvas_name))
+        i += 1
+        file.write("\n")

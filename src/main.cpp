@@ -50,11 +50,11 @@ int main() {
     coru_create(&co, counter, &jumpyNum, 8192);
 
     {
-        Util::TokenReader toker("rom:/game.toke");
+        Util::TokenReader toker("rom:/sprites.toke");
         do {
             char const *token = toker.next();
             if (!token) break;
-            fprintf(stderr, "-> %s\n", token);
+            fprintf(stderr, "-> '%s'\n", token);
         } while (true);
     }
 
