@@ -4,6 +4,7 @@
 #include "Util.hpp"
 #include "glm/gtc/type_ptr.hpp"
 #include "Util.hpp"
+#include "hashmap.h"
 
 /**
  * The classic old batcher class that draws a whole bunch of sub images from a
@@ -25,17 +26,33 @@ class Batcher {
          */
         class TexturedBatch {
             public:
-                int const max;
-                Texture const &texture;
-                Vert *verts = NULL;
-                uint16_t *idxs = NULL;
+                int max;
+                Texture const *texture;
+                mutable Vert *verts = NULL;
+                mutable uint16_t *idxs = NULL;
                 int *total;
-                int n = 0;
+                mutable int n = 0;
+
+                /**
+                 * Default constructor. Creates the batch such that it can't
+                 * actually be used because it's max is 0.
+                 */
+                TexturedBatch();
 
                 /**
                  * Creates the sub batch.
+                 * @param texture is the texutre t
                 */
-                TexturedBatch(Texture const &texture, int max, int *total);
+                TexturedBatch(Texture const *texture, int max, int *total);
+
+                /**
+                 * Sets the positioning and uv of the vertex at the given index.
+                 * @param n is the index of the vertex.
+                 * @param pos is the screen position of the vertex.
+                 * @param z is the draw order of the vertex.
+                 * @param uv is the texture mapping position of the vertex.
+                 */
+                void setVert(int n, glm::vec2 pos, float z, glm::vec2 uv);
 
                 /**
                  * Clears the count of sprites and the texture used.
@@ -45,11 +62,13 @@ class Batcher {
                 /**
                  * Draws it to the screen.
                  */
-                void draw() const;
+                void render() const;
         };
 
+        struct hashmap *sprites;
         TexturedBatch *batches;
         int nTextures;
+        int nFrame;
 
     public:
         /**
@@ -59,18 +78,25 @@ class Batcher {
          */
         class BSprite {
             private:
-                mutable TexturedBatch &batch;
+                TexturedBatch &batch;
             
             public:
-                Util::Rect bounds;
+                char const * const name;
+                Util::Rect const bounds;
 
                 /**
                  * Creates the little fucker.
+                 * @param name is the name of the sprite and it's key in the
+                 *        batcher's hashmap of sprites.
                  * @param bounds is the position of the sprite in it's sheet and
                  *               it's dimensions.
                  * @param batch is the specific texture batch it works with.
                  */
-                BSprite(Util::Rect bounds, TexturedBatch &batch);
+                BSprite(
+                    char const *name,
+                    Util::Rect bounds,
+                    TexturedBatch &batch
+                );
 
                 /**
                  * Adds a rectangle to be drawn, but rather than providing a

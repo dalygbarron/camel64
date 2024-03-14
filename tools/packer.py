@@ -69,7 +69,7 @@ for image in images:
         nodes.append(new_node)
 
 with open(outFile, "w") as file:
-    file.write("%d\n", len(nodes))
+    file.write("%d\n" % len(nodes))
     i = 1
     for node in nodes:
         canvas_name = "pack_%d.png" % i

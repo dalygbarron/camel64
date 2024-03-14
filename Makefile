@@ -8,7 +8,7 @@ include $(N64_INST)/include/n64.mk
 all: main.z64
 .PHONY: all
 
-sources = $(wildcard src/*.cpp) $(wildcard src/coru/*.c)
+sources = $(wildcard src/*.cpp) $(wildcard src/*.c) $(wildcard src/coru/*.c)
 OBJS = $(addprefix $(BUILD_DIR)/,$(patsubst src/%.cpp,%.o,$(sources:%.c=%.cpp)))
 
 assets_font = $(addprefix fonts/,$(notdir $(wildcard assets/fonts/*.ttf)))

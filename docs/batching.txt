@@ -1,0 +1,27 @@
+structure of the batching
+
+Vert:
+  has x y z
+  has u v
+
+texturedBatch:
+    created passing a texture, a max items, and a pointer to the batch wide
+        number of presently created rectangles for ordering.
+    stores vertices and indices for a specific texture.
+    stores count of it's own items and it's own max items.
+    stores texture to draw with.
+    has rnder function which renders those
+
+bsprite:
+    stores reference to relevant texturedBatch
+    stores sprite dimensions in texture
+    has the actual drawing functions
+
+batcher:
+    created using a file and a maximum number of sprites a given texture batch
+        can draw each frame.
+    stores a textured batch for all textures.
+    stores count of all added rects this frame
+    stores hashmap of sprites
+    has functions which clear count on itself and all texture batches
+    has function which draws all texture batches.

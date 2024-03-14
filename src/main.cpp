@@ -58,7 +58,6 @@ int main() {
         } while (true);
     }
 
-
     glClearColor(0, 0, 0, 1);
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
@@ -73,14 +72,16 @@ int main() {
     mixer_set_vol(1);
 
     xm64player_t xmPlayer;
-    xm64player_open(&xmPlayer, "rom:/music/bigAssClouds.xm64");
+    xm64player_open(&xmPlayer, "rom:/music/cat.xm64");
     xm64player_play(&xmPlayer, 0);
 
     Util::initFonts();
 
     Texture texture("rom:/pics/texture.sprite");
     Texture junk("rom:/pics/wood.sprite");
-    //Batcher batch(256, "rom:/pics/pack.sprite");
+    Batcher batch(256, "rom:/sprites.toke");
+
+    Batcher::BSprite const *sprite = batch.getSprite("cancel.png");
 
     sprite_t *mario = sprite_load("rom:/pics/logo.sprite");
 
@@ -144,6 +145,8 @@ int main() {
         glEnable(GL_DEPTH_TEST);
         glDisable(GL_CULL_FACE);
         glLoadIdentity();
+
+        sprite->add(Util::Rect(0, 0, 100, 200));
 
 
 

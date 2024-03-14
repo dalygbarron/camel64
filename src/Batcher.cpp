@@ -2,13 +2,39 @@
 
 using namespace Util;
 
+int spriteCompare(void const *a, void const *b, void *udata) {
+    return strcmp(
+        ((Batcher::BSprite const *)a)->name,
+        ((Batcher::BSprite const *)b)->name
+    );
+}
+
+uint64_t spriteHash(const void *item, uint64_t seed0, uint64_t seed1) {
+    char const *name = ((Batcher::BSprite const *)item)->name;
+    uint64_t hash = 0;
+    for(int i = 0; name[i]; i++) {
+        char c = name[i];
+        hash += c;
+        hash += (hash << 10);
+        hash ^= (hash >> 6);
+    }
+    hash += (hash << 3);
+    hash ^= (hash >> 11);
+    hash += (hash << 15);
+    return hash;
+}
+
+Batcher::TexturedBatch::TexturedBatch() {
+    
+}
+
 Batcher::TexturedBatch::TexturedBatch(
-    Texture const &texture,
+    Texture const *texture,
     int max,
     int *total
 ):
-    texture(texture),
     max(max),
+    texture(texture),
     total(total)
 {
     verts = new Vert[max * 4];
@@ -27,8 +53,23 @@ void Batcher::TexturedBatch::clear() {
     n = 0;
 }
 
-void Batcher::TexturedBatch::draw() const {
-    texture.bind();
+void Batcher::TexturedBatch::setVert(
+    int n,
+    glm::vec2 pos,
+    float z,
+    glm::vec2 uv
+) {
+    assert(n < max * 4);
+    verts[n].x = pos.x;
+    verts[n].y = pos.y;
+    verts[n].z = z;
+    verts[n].u = uv.x;
+    verts[n].v = uv.y;
+}
+
+void Batcher::TexturedBatch::render() const {
+    if (n == 0) return;
+    texture->bind();
     glEnable(GL_COLOR_MATERIAL);
     glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
     glEnableClientState(GL_VERTEX_ARRAY);
@@ -38,14 +79,20 @@ void Batcher::TexturedBatch::draw() const {
     glDrawElements(GL_TRIANGLES, n * 6, GL_UNSIGNED_SHORT, idxs);
 }
 
-Batcher::BSprite::BSprite(Util::Rect bounds, TexturedBatch &batch):
+Batcher::BSprite::BSprite(
+    char const *name,
+    Util::Rect bounds,
+    TexturedBatch &batch
+):
     batch(batch),
+    name(name),
     bounds(bounds)
 {
 }
 
 void Batcher::BSprite::addCentered(glm::mat3 transform) const {
-
+    // TODO: this. just need to figure out verts based on sprite size then
+    //       transform with the matrix.
 }
 
 void Batcher::BSprite::add(Util::Rect dst) const {
@@ -53,28 +100,45 @@ void Batcher::BSprite::add(Util::Rect dst) const {
         fprintf(stderr, "Texture batch max items reached\n");
         return;
     }
-    // TODO: we need to maintain a global count of things drawn in order for
-    //       the z ordering to work. Also we should add stuff to the list from
-    //       the back to the front so that the things that appear in front are
-    //       drawn first thus taking advantage of the z buffer.
-    batch.verts[batch.n * 4].pos = dst.pos;
-    batch.verts[batch.n * 4 + 1].pos = dst.r();
-    batch.verts[batch.n * 4 + 2].pos = dst.tr();
-    batch.verts[batch.n * 4 + 3].pos = dst.tl();
-    batch.verts[batch.n * 4].uv = bounds.pos;
-    batch.verts[batch.n * 4 + 1].uv = bounds.r();
-    batch.verts[batch.n * 4 + 2].uv = bounds.tr();
-    batch.verts[batch.n * 4 + 3].uv = bounds.tl();
+    float z = *batch.total++;
+    batch.setVert(batch.n * 4, dst.pos, z, bounds.pos);
+    batch.setVert(batch.n * 4 + 1, dst.r(), z, bounds.r());
+    batch.setVert(batch.n * 4 + 2, dst.tr(), z, bounds.tr());
+    batch.setVert(batch.n * 4 + 3, dst.tl(), z, bounds.tl());
+    batch.n++;
 }
 
 Batcher::Batcher(int maxSprites, char const *filename) {
     TokenReader reader(filename);
-    assert(reader.hasMore());
-    int n = reader.nextInt();
+    nTextures = reader.nextInt();
+    sprites = hashmap_new(16, 0, 0, 0, spriteHash, spriteCompare, NULL, NULL);
+    batches = new TexturedBatch[nTextures];
+    int i = 0;
+    while (reader.hasMore()) {
+        char const *type = reader.next();
+        if (type[0] == 'p') {
+            batches[i++] = TexturedBatch(
+                new Texture(reader.next()),
+                maxSprites,
+                &nFrame
+            );
+        } else {
+            BSprite sprite(
+                strdup(reader.next()),
+                Rect(reader.nextInt(), reader.nextInt(), reader.nextInt(), reader.nextInt()),
+                batches[i]
+            );
+            hashmap_set(sprites, &sprite);
+        }
+    }
+}
+
+Batcher::BSprite const *Batcher::getSprite(char const *name) const {
+    return (Batcher::BSprite *)hashmap_get(sprites, name);
 }
 
 void Batcher::render() {
-
+    for (int i = 0; i < nTextures; i++) batches[i].render();
 }
 
 void Batcher::clear() {
