@@ -71,28 +71,3 @@ class Spatial {
          */
         void setScale(glm::vec3 scale);
 };
-
-/**
- * A spatial that also has a set of geometry that can be used in collision
- * detection against cylinders.
- */
-class Wall: public Spatial {
-
-};
-
-/**
- * A spatial that has also got a cylindrical hit box, and a velocity and stuff,
- * and can move around and collide with obstacle spatials and each other.
- * Note, however, that the cylinder is always pointing from the dude's origin
- * point up along the global Y axis. The cylinder's height is scaled by the
- * Dude's personal Y scale (so dudes being parents of dudes would be
- * problematic), and the radius is scaled by the personal Z scale (admittedly
- * an average of X and Z would make more sense but it seems like a totally
- * pointless use case, and if I turn out to be wrong about that I'll change it).
- */
-class Dude: public Spatial {
-    public:
-        float radius;
-        float radiusSquared;
-        float height;
-};

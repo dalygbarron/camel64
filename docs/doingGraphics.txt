@@ -1,0 +1,89 @@
+Ok I think this batcher thing is kinda broken, but also, I think that swapping
+textures a bunch of times will not really be acceptable. No you know what,
+the approach I am taking here is good enough. We do need to take care to try to
+minimise the number of different textures that we use, and try to reuse them
+(particularly bullets) with different colours etc.
+What we could also do though to minimise texture changes is try to use the z
+buffer to enforce the order in which stuff is drawn (transparancy is 1 bit
+anyway).
+
+So say you are drawing a bunch of characters, it could skip the ones for the
+next spritesheet until everything from the first one is drawn, then use the
+z buffer to draw the ones in behind that go behind etc.
+
+Hmm, the only thing is that we are actually in a situation where we can use the
+painter's algorithm and not bother with a z buffer which would probably be
+better for performance. But then, how do we avoid a bunch of texture changes?
+Just be careful? Bullets could probably all be one batch to be fair, and in fact
+the order in which bullets are drawn doesn't really matter, probably the same
+with ground tiles (at least the order not mattering part). However, a single
+character might not even fit into a texture themself, let alone a bunch of them,
+so if you have a bunch of characters on screen you kinda need to assume that
+there will be at least one texture change for every one of them. Is that a
+problem? Honestly probably not, there aren't going to be that many characters on
+screen most of the time and if there are a lot of them are probably the same.
+
+Wait a sec I have one more idea::: what if the background and the bullets are
+drawn with the depth buffer turned off, but we temporarily turn it on for
+drawing characters and plants. yeah needs to skip things idk how.
+
+The Technical Side
+==================
+
+Ok that sounds good, but how will we code this? When we are in the situation
+where we want to use the z buffer and different textures then we just have a
+per texture list of things to draw and as we add each one we increment a z
+buffer counter thingy.
+
+now, all the vertices are already 3d and the components are shorts so the z
+buffer increment thing is very easy.
+
+So, the only thing we are really missing is that I would like to be able to
+add colour. To be honest I think I am likely to use that functionality for
+almost all the batched stuff so I might as well include it.
+
+Oh one other thing, there is no good reason to use a batch renderer to render
+the background. It won't change or at least not frequently, so it would make
+more sense to create it permanently as a drawlist. Not going to bother trying to
+optimise it it would be too hard.
+
+Ok so the only other thing I wanted to mention is that all of the bullet sprites
+will likely be on the same texture and will not need z buffering. Can we use the
+same class to deal with that? well the same texture part is neither here nor
+there really. Actually come to think of it the lack of z buffering makes no
+difference either. The cost of the batcher incrememnting that z variable is
+not an issue, so we can let it continue to pass that data since it does it all
+the time anyway.
+
+I think it would be best if the batcher is more or less water tight with regards
+to it's opengl stuff, but we could add a flag to calling it that determines
+whether you want strict ordering or not, and if strict ordering is turned off
+then the z buffer will not be used even though that data will still be passed.
+If it is used, then it will nuke the z buffer before it draws (Nice water tight
+abstraction you got there huh).
+
+
+
+Ok. Lets say the batcher has got vertices added to it for 3 or so different
+textures. What does a whirl of this thing look like?
+
+For each texture we have a TextureBatch object that maintains a linked list of
+chunks of about 64 quads to be drawn. Every time you add a new one it is added
+to the end of the list for it's texture, but it is given a z value that is
+incremented for all textures. Anyway, when it is time to draw, we iterate over
+each texture and then each chunk, rendering each chunk in one set of opengl
+calls.
+
+
+
+
+
+*linked list of chunks. Describe this idea. Basically we have a linked list so
+that our data can grow and also shrink, but we improve the cache locality thingy
+by making it that rather than nodes consisting of a single element, they consist
+of a chunk of configurable size. Presumably you would aim for a chunk size that
+fits the whole bulk of "normal" usage, so lets say as few as 4 or so for
+character textures, whereas probably at least a couple of hundred for bullets.
+
+Data will be reclaimed by calling a special function after each use. If a chunk
+hasn't been used in a couple of calls of the function then it is deleted.

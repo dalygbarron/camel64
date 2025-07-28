@@ -8,3 +8,7 @@ main.z64
 .vscode
 .libdragon
 .DS_Store
+*.bs1
+*.o
+packer
+*/.DS_Store

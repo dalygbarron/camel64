@@ -4,7 +4,7 @@
 #include "Util.hpp"
 #include "glm/gtc/type_ptr.hpp"
 #include "Util.hpp"
-#include "hashmap.h"
+#include "hashmap.hpp"
 
 /**
  * The classic old batcher class that draws a whole bunch of sub images from a

@@ -14,3 +14,12 @@ In the middle of making the multi texture batcher. As you will see, it provides
     Actually we can avoid the issue of alignment and make reading in the engine
     easier by just making the batcher generate a number of textures which all
     fit a size requirement of 64x64 or whatever.
+
+Avoid using the rdpq stuff. Implement our own font rendering etc. I would like
+    to make it possible that I could also port this game to normal computers
+    one day. Therefore I should avoid using libdragon components that I don't
+    need to use. Opengl is cool because it exists outside of libdragon anyway.
+    The rdpq stuff of course does not exist outside of libdragon and when I port
+    it I will need to implement it via opengl so it seems to make sense to do
+    that. Other stuff of course I use because I have to, there is no harm in
+    that, we will just have to provide our own implementation of it later.

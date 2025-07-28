@@ -70,19 +70,6 @@ namespace Util {
     };
 
     /**
-     * Takes string and compares it to a whole bunch of strings and finds which
-     * of these strings if any it is equal to. Basically this just exists
-     * because doing strcmp against a bunch of strings seperately is a waste of
-     * time.
-     * @param string is the string that is compared to all others.
-     * @param ... is all the other strings. You need to provide at least one or
-     *        it will crash.
-     * @return the index of the string that the test string is equal to, or -1
-     *         if it is not equal to any of them.
-     */
-    int selectString(char const *string, ...);
-
-    /**
      * Tells you if the given character is whitespace.
      * @param c is the character to check.
      * @return true iff it's whitespace.

@@ -42,21 +42,20 @@ class Skybox {
         };
 
     private:
-        bool initialised = false;
         GLuint textures[SKY_N];
-        GLuint drawLists;
+        GLuint drawList;
 
     public:
+        /**
+         * Creates the skybox and sets up it's textures.
+         * @param filename is the name of the file to load the texture from.
+         */
+        Skybox(char const *filename);
+
         /**
          * Frees all the textures and stuff if they are present.
          */
         ~Skybox();
-
-        /**
-         * Initialises the skybox based on an image that should contain a bunch
-         * of other images in a special order.
-         */
-        void init(char const *filename);
 
         /**
          * Frees the current content.

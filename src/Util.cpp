@@ -35,13 +35,6 @@ glm::vec2 Rect::tl() const {
     return glm::vec2(pos.x, pos.y + size.y);
 }
 
-int selectString(char const *string, ...) {
-    int n = 0;
-    va_list args;
-    va_start(args, string);
-    return n;
-}
-
 unsigned int hashString(char const *string) {
     unsigned int hash = 0;
     for (int i = 0; string[i]; i++) {

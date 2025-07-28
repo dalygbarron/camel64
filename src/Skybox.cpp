@@ -4,17 +4,16 @@
 
 rdpq_texparms_t textureParam {
     .s {
-        .repeats = 0
+        .mirror = MIRROR_REPEAT
     },
     .t {
-        .repeats = 0
+        .mirror = MIRROR_REPEAT
     }
 };
 
 struct SkyboxVertex {
     glm::vec3 pos;
     glm::vec2 uv;
-    uint8_t colour[3];
 };
 
 glm::vec2 const UV_PORTIONS(1.0f / 4.0f, 1.0f / 6.0f);
@@ -64,11 +63,6 @@ void faces(
         verts[i * 4 + 2].uv = glm::vec2(1, 1);
         verts[i * 4 + 3].uv = glm::vec2(0, 1);
     }
-    for (int i = 0; i < 16; i++) {
-        verts[i].colour[0] = 0xff;
-        verts[i].colour[1] = 0xff;
-        verts[i].colour[2] = 0xff;
-    }
 }
 
 void loadTexture(sprite_t *sprite, GLuint texture, int x, int y) {
@@ -79,11 +73,7 @@ void loadTexture(sprite_t *sprite, GLuint texture, int x, int y) {
     glSurfaceTexImageN64(GL_TEXTURE_2D, 0, &slice, &textureParam);
 }
 
-Skybox::~Skybox() {
-    free();
-}
-
-void Skybox::init(char const *filename) {
+Skybox::Skybox(char const *filename) {
     sprite_t *sprite = sprite_load(filename);
     assertf(
         sprite->width == EXPECTED_WIDTH,
@@ -143,46 +133,31 @@ void Skybox::init(char const *filename) {
     faces(vertices + 80, fbl, fbr, bbl, bbr); // bottom
     uint16_t indices[SKY_N * 4];
     for (int i = 0; i < SKY_N * 4; i++) indices[i] = i;
-    drawLists = glGenLists(6);
+    drawList = glGenLists(1);
+    glNewList(drawList, GL_COMPILE);
+    glEnable(GL_COLOR_MATERIAL);
+    glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
+    glEnableClientState(GL_VERTEX_ARRAY);
+    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+    glVertexPointer(3, GL_FLOAT, sizeof(struct SkyboxVertex), (void*)&vertices[0].pos);
+    glTexCoordPointer(2, GL_FLOAT, sizeof(struct SkyboxVertex), (void*)&vertices[0].uv);
     for (int i = 0; i < 6; i++) {
-        glNewList(drawLists + i, GL_COMPILE);
-        glEnable(GL_COLOR_MATERIAL);
-        glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
-        glEnableClientState(GL_VERTEX_ARRAY);
-        glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-        glEnableClientState(GL_COLOR_ARRAY);
-        glVertexPointer(3, GL_FLOAT, sizeof(struct SkyboxVertex), (void*)&vertices[0].pos);
-        glTexCoordPointer(2, GL_FLOAT, sizeof(struct SkyboxVertex), (void*)&vertices[0].uv);
-        glColorPointer(3, GL_UNSIGNED_BYTE, sizeof(struct SkyboxVertex), (void*)&vertices[0].colour);
         for (int f = 0; f < 4; f++) {
             glBindTexture(GL_TEXTURE_2D, textures[i * 4 + f]);
             glDrawElements(GL_QUADS, 4, GL_UNSIGNED_SHORT, indices + i * 16 + f * 4);
         }
-        glDisableClientState(GL_VERTEX_ARRAY);
-        glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-        glDisableClientState(GL_COLOR_ARRAY);
-        glDisable(GL_COLOR_MATERIAL);
-        glEndList();
     }
-    initialised = true;
+    glDisableClientState(GL_VERTEX_ARRAY);
+    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+    glDisable(GL_COLOR_MATERIAL);
+    glEndList();
 }
 
-void Skybox::free() {
-    if (!initialised) return;
+Skybox::~Skybox() {
     glDeleteTextures(SKY_N, textures);
-    initialised = false;
+    glDeleteLists(drawList, 1);
 }
 
 void Skybox::render(glm::vec3 cameraDirection) const {
-    if (!initialised) {
-        debugf("Trying to render uninitialised skybox");
-        return;
-    }
-    for (int i = 0; i < 6; i++) {
-        glCallList(drawLists + i);
-    }
-    // I think basically what we do is for every cardinal direction, we have a
-    // vector that we can do a dot product with, and if the dot product is
-    // positive (or negative idk), then we will call the display list for those
-    // four faces.
+    glCallList(drawList);
 } 

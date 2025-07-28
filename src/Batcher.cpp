@@ -115,22 +115,27 @@ Batcher::Batcher(int maxSprites, char const *filename) {
     batches = new TexturedBatch[nTextures];
     int i = 0;
     while (reader.hasMore()) {
+        fprintf(stderr, "->\n");
         char const *type = reader.next();
         if (type[0] == 'p') {
+            char const *file = reader.next();
             batches[i++] = TexturedBatch(
-                new Texture(reader.next()),
+                new Texture(file),
                 maxSprites,
                 &nFrame
             );
         } else {
+            char const *name = reader.next();
+            fprintf(stderr, "%s\n", name);
             BSprite sprite(
-                strdup(reader.next()),
+                strdup(name),
                 Rect(reader.nextInt(), reader.nextInt(), reader.nextInt(), reader.nextInt()),
                 batches[i]
             );
             hashmap_set(sprites, &sprite);
         }
     }
+    fprintf(stderr, "DAS ENDE\n");
 }
 
 Batcher::BSprite const *Batcher::getSprite(char const *name) const {

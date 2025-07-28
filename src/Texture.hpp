@@ -8,6 +8,7 @@ class Texture {
     private:
         GLuint id = 0;
         glm::uvec2 size;
+        sprite_t *sprite;
 
     public:
         /**

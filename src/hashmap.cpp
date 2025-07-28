@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <stddef.h>
-#include "hashmap.h"
+#include "hashmap.hpp"
 
 #define GROW_AT   0.60 /* 60% */
 #define SHRINK_AT 0.10 /* 10% */
@@ -127,7 +127,7 @@ struct hashmap *hashmap_new_with_allocator(void *(*_malloc)(size_t),
     }
     // hashmap + spare + edata
     size_t size = sizeof(struct hashmap)+bucketsz*2;
-    struct hashmap *map = _malloc(size);
+    struct hashmap *map = (struct hashmap *)_malloc(size);
     if (!map) {
         return NULL;
     }
@@ -279,7 +279,7 @@ const void *hashmap_set_with_hash(struct hashmap *map, const void *item,
         }
     }
 
-    struct bucket *entry = map->edata;
+    struct bucket *entry = (struct bucket *)map->edata;
     entry->hash = hash;
     entry->dib = 1;
     void *eitem = bucket_item(entry);

@@ -3,6 +3,8 @@ SOURCE_DIR=src
 BUILD_DIR=build
 N64_ROM_REGIONFREE=true
 N64_ROM_SAVETYPE=eeprom4k
+N64_TOOLS=$(N64_INST)/bin
+PACKER=./tools/packer
 include $(N64_INST)/include/n64.mk
 
 all: main.z64
@@ -31,39 +33,44 @@ $(BUILD_DIR)/main.elf: $(OBJS)
 
 AUDIOCONV_FLAGS ?=
 
-filesystem/sprites.toke: assets/sprites/*
+$(PACKER): RECURSIVE
+	$(MAKE) -C tools packer
+
+filesystem/sprites.toke: assets/sprites/* $(PACKER)
 	@mkdir -p $(dir $@)
 	@echo "    [SPRITE_ATLAS] $@"
-	./tools/packer.py assets/sprites filesystem/sprites.toke filesystem/pics
+	$(PACKER) -x 64 -y 128 assets/sprites  filesystem/sprites.toke assets/pics
 
 filesystem/music/%.xm64: assets/music/%.xm
 	@mkdir -p $(dir $@)
 	@echo "    [AUDIO] $@"
 	@$(N64_AUDIOCONV) $(AUDIOCONV_FLAGS) -o filesystem/music "$<"
 
-filesystem/pics/%.sprite: assets/pics/%.i.png
-	@mkdir -p $(dir $@)
-	@echo "    [SPRITE_I] $@"
-	@mksprite -f I8 $<
-	@mv $(patsubst %.png, %.sprite, $(notdir $<)) $@
-
 filesystem/pics/%.sprite: assets/pics/%.png
 	@mkdir -p $(dir $@)
 	@echo "    [SPRITE] $@"
-	@mksprite -f RGBA16 -o filesystem/pics $<
+	@$(N64_TOOLS)/mksprite -f RGBA16 -o filesystem/pics $<
+
+filesystem/pics/%.sprite: assets/pics/%.i.png
+	@mkdir -p $(dir $@)
+	@echo "    [SPRITE_I] $@"
+	@$(N64_TOOLS)/mksprite -f I8 $<
+	@mv $(patsubst %.png, %.sprite, $(notdir $<)) $@
 
 filesystem/fonts/%.font64: assets/fonts/%.ttf
 	@mkdir -p $(dir $@)
 	@echo "    [FONT] $@"
-	@mkfont -o filesystem/fonts -s 24 $<
+	@$(N64_TOOLS)/mkfont -o filesystem/fonts -s 24 $<
 
 filesystem/models/%.model64: assets/models/%.glb
 	@mkdir -p $(dir $@)
 	@echo "    [MODEL] $@"
-	@mkmodel -o filesystem/models "$<"
+	@$(N64_TOOLS)/mkmodel -o filesystem/models "$<"
 
 clean:
 	rm -rf $(BUILD_DIR) main.z64 filesystem
-.PHONY: clean
+	$(MAKE) -C tools clean
+	
+.PHONY: clean RECURSIVE
 
 -include $(wildcard $(BUILD_DIR)/*.d)

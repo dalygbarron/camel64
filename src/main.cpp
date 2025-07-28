@@ -11,19 +11,11 @@
 #include "Skybox.hpp"
 #include "Spatial.hpp"
 #include "Batcher.hpp"
-#include "coru/coru.h"
 
 #define DEG2RAD(d) ((d) * M_PI/180.)
 #define RAD2DEG(r) ((r) / (M_PI/180.))
 
 uint32_t const WHITE = 0xffffffff;
-
-void counter(void *data) {
-    for (int i = 0; i < 1000; i++) {
-        *((int *)data) = i;
-        coru_yield();
-    }
-}
 
 int main() {
     debug_init(DEBUG_FEATURE_ALL);
@@ -32,7 +24,13 @@ int main() {
 
     // Initialize 320x240x16, triple buffering.
     // NOTE: anti-alias will only be active if activated later in GL.
-    display_init(RESOLUTION_320x240, DEPTH_16_BPP, 3, GAMMA_NONE, ANTIALIAS_RESAMPLE_FETCH_ALWAYS);
+    display_init(
+        RESOLUTION_320x240,
+        DEPTH_16_BPP,
+        3,
+        GAMMA_NONE,
+        ANTIALIAS_RESAMPLE_FETCH_ALWAYS
+    );
  
     // Allocate a buffer that will be used as Z-Buffer.
     surface_t zbuffer = surface_alloc(FMT_RGBA16, 320, 240);
@@ -41,27 +39,22 @@ int main() {
     gl_init();
     //GLuint cube = generateCube();
 
-    float aspect_ratio = (float)display_get_width() / (float)display_get_height();
+    float aspect_ratio = (float)display_get_width() /
+        (float)display_get_height();
     float near_plane = 0.5f;
     float far_plane = 120.0f;
-
-    int jumpyNum = 0;
-    coru_t co;
-    coru_create(&co, counter, &jumpyNum, 8192);
-
-    {
-        Util::TokenReader toker("rom:/sprites.toke");
-        do {
-            char const *token = toker.next();
-            if (!token) break;
-            fprintf(stderr, "-> '%s'\n", token);
-        } while (true);
-    }
 
     glClearColor(0, 0, 0, 1);
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    glFrustum(-near_plane*aspect_ratio, near_plane*aspect_ratio, -near_plane, near_plane, near_plane, far_plane);
+    glFrustum(
+        -near_plane*aspect_ratio,
+        near_plane*aspect_ratio,
+        -near_plane,
+        near_plane,
+        near_plane,
+        far_plane
+    );
     glMatrixMode(GL_MODELVIEW);
 
     joypad_init();
@@ -72,21 +65,20 @@ int main() {
     mixer_set_vol(1);
 
     xm64player_t xmPlayer;
-    xm64player_open(&xmPlayer, "rom:/music/cat.xm64");
+    xm64player_open(&xmPlayer, "rom:/music/bigAssClouds.xm64");
     xm64player_play(&xmPlayer, 0);
 
     Util::initFonts();
 
     Texture texture("rom:/pics/texture.sprite");
     Texture junk("rom:/pics/wood.sprite");
-    Batcher batch(256, "rom:/sprites.toke");
+    //Batcher batch(256, "rom:/sprites.toke");
 
-    Batcher::BSprite const *sprite = batch.getSprite("cancel.png");
+    //Batcher::BSprite const *sprite = batch.getSprite("cancel.png");
 
     sprite_t *mario = sprite_load("rom:/pics/logo.sprite");
 
-    Skybox sky;
-    sky.init("rom:/pics/sky.sprite");
+    Skybox sky("rom:/pics/sky.sprite");
 
     Spatial camera;
 
@@ -113,7 +105,6 @@ int main() {
         mixer_poll(out, audiosz);
         audio_write_end();
 
-        coru_resume(&co);
 
         joypad_poll();
         joypad_inputs_t inputs = joypad_get_inputs(JOYPAD_PORT_1);
@@ -146,7 +137,7 @@ int main() {
         glDisable(GL_CULL_FACE);
         glLoadIdentity();
 
-        sprite->add(Util::Rect(0, 0, 100, 200));
+        //sprite->add(Util::Rect(0, 0, 100, 200));
 
 
 
@@ -174,19 +165,19 @@ int main() {
             glRotatef(yTwist * 30, 0, 1, 0);
             glRotatef(zTwist * 30, 0, 0, 1);
             glCallList(cube);
-            //glTranslatef(0, 5, 0);
-            // for (int i = 0; i < 9; i++) {
-            //     glPushMatrix();
-            //     glScalef(0.7, 0.7, 0.7);
-            //     glTranslatef(0, 10, 0);
-            //     glRotatef(xTwist * 30, 1, 0, 0);
-            //     glRotatef(yTwist * 30, 0, 1, 0);
-            //     glRotatef(zTwist * 30, 0, 0, 1);
-            //     glCallList(cube);
-            //     glTranslatef(0, 5, 0);
-            // }
+            glTranslatef(0, 5, 0);
+            for (int i = 0; i < 2; i++) {
+                glPushMatrix();
+                glScalef(0.7, 0.7, 0.7);
+                glTranslatef(0, 10, 0);
+                glRotatef(xTwist * 30, 1, 0, 0);
+                glRotatef(yTwist * 30, 0, 1, 0);
+                glRotatef(zTwist * 30, 0, 0, 1);
+                glCallList(cube);
+                glTranslatef(0, 5, 0);
+            }
 
-            // for (int i = 0; i < 9; i++) glPopMatrix();
+            for (int i = 0; i < 2; i++) glPopMatrix();
         }
         
         gl_context_end();
@@ -196,12 +187,7 @@ int main() {
             Util::HEADING,
             20,
             20,
-            "HELLO\n%f %f\n%f %f\n %d",
-            xSin,
-            xCos,
-            ySin,
-            yCos,
-            jumpyNum
+            "HELLO\nIt is Worm Time"
         );
         rdpq_set_mode_standard();
         rdpq_mode_alphacompare(128);
