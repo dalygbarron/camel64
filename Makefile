@@ -39,7 +39,7 @@ $(PACKER): RECURSIVE
 filesystem/sprites.toke: assets/sprites/* $(PACKER)
 	@mkdir -p $(dir $@)
 	@echo "    [SPRITE_ATLAS] $@"
-	$(PACKER) -x 64 -y 128 assets/sprites  filesystem/sprites.toke assets/pics
+	$(PACKER) -x 64 -y 128 -p 1 assets/sprites  filesystem/sprites.toke filesystem/pics
 
 filesystem/music/%.xm64: assets/music/%.xm
 	@mkdir -p $(dir $@)
