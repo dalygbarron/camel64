@@ -5,6 +5,7 @@ filesystem/*
 build
 build/*
 main.z64
+main.bs1
 .vscode
 .libdragon
 .DS_Store
