@@ -70,7 +70,6 @@ struct Pic {
 
     /**
      * Saves the picture to the given file.
-     * @param file is where to save.
      * @return true if all went well and false if it failed to save.
      */
     bool save(fs::path file) const {
@@ -212,11 +211,13 @@ struct PackNode {
     /**
      * Blits all the elements in the tree recursively onto the provided pic.
      * @param out is the place to draw the stuffs.
+     * @param xOffset is a shift to the right for all elements.
+     * @param yOffset is a shift down for all elements.
      */
-    void flatten(Pic &out) {
-        pic.blit(out, x, y);
-        if (right) right->flatten(out);
-        if (down) down->flatten(out);
+    void flatten(Pic &out, unsigned xOffset, unsigned yOffset) const {
+        pic.blit(out, x + xOffset, y + yOffset);
+        if (right) right->flatten(out, xOffset, yOffset);
+        if (down) down->flatten(out, xOffset, yOffset);
     }
 };
 
@@ -256,6 +257,38 @@ vector<Pic> findPngs(fs::path const &path) {
 }
 
 /**
+ * Saves all the trees to a single image. They are packed side by side right now
+ * so it's going to work best if the trees all have the same height.
+ * @param trees is the list of trees, which become individual files.
+ * @param outImage is where to save the image data.
+ * @param outData is where to save the position data.
+ * @param padding is the amount of padding in pixels to add between trees.
+ * @return 0 if all is well and something else if not.
+ */
+int saveAll(
+    vector<PackNode> const &trees,
+    fs::path outImage,
+    fs::path outData,
+    unsigned padding
+) {
+    fs::create_directories(outImage.parent_path());
+    fs::create_directories(outData.parent_path());
+    unsigned width = 0;
+    unsigned height = 0;
+    for (PackNode const &tree: trees) {
+        if (tree.height > height) height = tree.height;
+        width += tree.width + padding;
+    }
+    Pic out = Pic::createBlank(width, height);
+    unsigned x = 0;
+    for (PackNode const &tree: trees) {
+        tree.flatten(out, x, 0);
+        x += tree.width + padding;
+    }
+    return out.save(outImage) ? 0 : 1;
+}
+
+/**
  * Prints how to use the program to stderr and then returns the error code that
  * the program ought now to exit with.
  * @param name is the name of the program aka argv[0] so we can print it.
@@ -271,8 +304,8 @@ int usage(char const *name) {
 
 int main(int argc, char **argv) {
     fs::path inFolder;
-    fs::path outFile;
-    fs::path outFolder;
+    fs::path outData;
+    fs::path outImage;
     unsigned width = 32;
     unsigned height = 64;
     unsigned padding = 0;
@@ -294,11 +327,8 @@ int main(int argc, char **argv) {
     }
     if (argc - optind != 3) return usage(argv[0]);
     inFolder = argv[optind];
-    outFile = argv[optind + 1];
-    outFolder = argv[optind + 2];
-    // validate that stuff exists
-    fs::create_directories(outFolder);
-    fs::create_directories(outFile);
+    outData = argv[optind + 1];
+    outImage = argv[optind + 2];
     // load, sort, and pack the pictures.
     vector<Pic> pics = findPngs(inFolder);
     sort(
@@ -317,19 +347,5 @@ int main(int argc, char **argv) {
         next:;
     }
     // save the output.
-    int i = 0;
-    for (PackNode &tree: trees) {
-        Pic outImage = Pic::createBlank(width, height);
-        tree.flatten(outImage);
-        fs::path file = outFolder / fmt::format("pack_{}.png", i);
-        if (!outImage.save(file)) return 1;
-        i++;
-    }
-    
-    // ok now we need to draw all the pics to one image, then write them out in
-    // some kind of binary format to a file.
-
-
-
-    return 0;
+    return saveAll(trees, outImage, outData, padding);
 }

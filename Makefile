@@ -6,19 +6,20 @@ N64_ROM_SAVETYPE=eeprom4k
 N64_TOOLS=$(N64_INST)/bin
 PACKER=./tools/packer
 include $(N64_INST)/include/n64.mk
+CXXFLAGS += -Isrc/lib -Isrc/lib/bitsery/include
 
 all: main.z64
 .PHONY: all
 
-sources = $(wildcard src/*.cpp) $(wildcard src/*.c) $(wildcard src/coru/*.c)
+sources = $(wildcard src/*.cpp) $(wildcard src/*.c) $(wildcard src/lib/*/*.cpp)
 OBJS = $(addprefix $(BUILD_DIR)/,$(patsubst src/%.cpp,%.o,$(sources:%.c=%.cpp)))
 
 assets_font = $(addprefix fonts/,$(notdir $(wildcard assets/fonts/*.ttf)))
 assets_i_png = $(addprefix pics/,$(notdir $(wildcard assets/pics/*.i.png)))
-assets_png = $(filter-out $(assets_i_png),$(addprefix pics/,$(notdir $(wildcard assets/pics/*.png))))
+assets_png = $(filter-out $(assets_i_png),$(addprefix pics/,$(notdir $(wildcard assets/pics/*.png))) pics/sprites.png)
 assets_xm = $(addprefix music/,$(notdir $(wildcard assets/music/*.xm)))
 assets_model = $(addprefix models/,$(notdir $(wildcard assets/models/*.glb)))
-assets_conv = $(addprefix filesystem/,sprites.toke\
+assets_conv = $(addprefix filesystem/,sprites.bin\
                                      $(assets_png:.png=.sprite)\
 									 $(assets_font:%.ttf=%.font64)\
 									 $(assets_xm:%.xm=%.xm64)\
@@ -28,6 +29,18 @@ assets_conv = $(addprefix filesystem/,sprites.toke\
 main.z64: N64_ROM_TITLE="Idiot Timer"
 main.z64: $(BUILD_DIR)/main.dfs
 
+$(info $(lib_sources))
+$(info $(OBJS))
+
+# Ok I figured out what to do about the sprite packer generating an
+# indeterminate number of files problem. We simply make it generate one big
+# image and when we create the textures presumably we can create smaller image
+# objects out of the relevant pieces.
+# If we were being really fancy we could cut the sheets to the dimensions that
+# are actually used and then bin pack them but it might actually make it worse
+# unless I spend a lot of effort on making it smart, so it's probably better to
+# just keep them at their fixed size and then pack them horizontally.
+
 $(BUILD_DIR)/main.dfs: $(assets_conv)
 $(BUILD_DIR)/main.elf: $(OBJS)
 
@@ -36,15 +49,20 @@ AUDIOCONV_FLAGS ?=
 $(PACKER): RECURSIVE
 	$(MAKE) -C tools packer
 
-filesystem/sprites.toke: assets/sprites/* $(PACKER)
-	@mkdir -p $(dir $@)
+$(BUILD_DIR)/sprites.png filesystem/sprites.bin: assets/sprites/* $(PACKER)
+	@mkdir -p $(BUILD_DIR)
 	@echo "    [SPRITE_ATLAS] $@"
-	$(PACKER) -x 64 -y 128 -p 1 assets/sprites  filesystem/sprites.toke filesystem/pics
+	$(PACKER) -x 64 -y 128 -p 1 assets/sprites filesystem/sprites.bin $(BUILD_DIR)/sprites.png
 
 filesystem/music/%.xm64: assets/music/%.xm
 	@mkdir -p $(dir $@)
 	@echo "    [AUDIO] $@"
 	@$(N64_AUDIOCONV) $(AUDIOCONV_FLAGS) -o filesystem/music "$<"
+
+filesystem/pics/%.sprite: $(BUILD_DIR)/%.png
+	@mkdir -p $(dir $@)
+	@echo "    [SPRITE] $@"
+	@$(N64_TOOLS)/mksprite -f RGBA16 -o filesystem/pics $<
 
 filesystem/pics/%.sprite: assets/pics/%.png
 	@mkdir -p $(dir $@)
